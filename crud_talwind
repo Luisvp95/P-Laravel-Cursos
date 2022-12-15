@@ -1,0 +1,1125 @@
+//crear proyecto lavavel
+composer create-project laravel/laravel:^8.0 example-app
+//configuramos la base de datos
+archivo .env
+//ante de instalar jetstream se borra el archivo composer.lock
+//instalamos jetstream
+composer require laravel/jetstream v2.3.0
+//instalamos livewire
+php artisan jetstream:install livewire // v2.0
+npm install && npm run dev
+php artisan migrate
+//creamos el model
+php artisan make:model Article -mf
+
+//configuramos la migracion
+
+$table->integer('user_id')->index();
+$table->string('name');
+$table->float('price', 8, 2);
+$table->integer('quantity');
+$table->boolean('status');
+
+//ejecutamos php artisan migrate
+
+//configuramos el modelo Article.php
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+
+class Article extends Model
+{
+    use HasFactory;
+    protected $fillable = ['name', 'price', 'quantity', 'status'];
+
+    public function user()
+    {
+	return $this->belongsTo(User::class);
+    }
+}
+
+//configuramos el modelo User.php agregando una nueva funcion
+
+use App\Models\Article;
+
+public function articles()
+     {
+        return $this->hasMany(Article::class);
+     }
+//configuramos FactoryArticle para agregar datos falsos a la base de datos
+
+use App\Models\Article;
+use App\Models\User;
+
+public function definition()
+    {
+        return [
+            'user_id' => User::factory(),
+            'name' => $this->faker->word,
+            'price' => $this->faker->randomNumber(2),
+            'quantity' => $this->faker->numberBetween(50,500),
+            'status' => $this->faker->boolean()
+        ];
+    }
+//ejecutamos:
+php artisan tinker
+Article::factory()->count(5)->create(['user_id' => 1])
+
+//configuramos la ruta routes\web.php
+
+Route::get('/articulos', function () {
+        return view('articles');
+    })->name('articles');
+
+//configuramos las vistas resources\views\navigation-menu.blade.php
+agregar en la linea 19
+
+<x-jet-nav-link href="{{ route('articles') }}" :active="request()->routeIs('articles')">
+                        {{ __('Articulos') }}
+                    </x-jet-nav-link>
+                    
+agregamos en la linea 146
+
+<x-jet-responsive-nav-link href="{{ route('articles') }}" :active="request()->routeIs('articles')">
+                {{ __('Articulos') }}
+            </x-jet-responsive-nav-link>
+
+//creamos en resources\views\articles.blade.php
+
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Articulos') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+                <livewire:articles/>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+
+//creamos el componente articles
+
+php artisan make:livewire articles
+
+//configuramos el componente resources\views\livewire\articles.blade.php
+
+//configuramos app\Http\Livewire\Articles.php
+
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Article;
+use Livewire\WithPagination;
+
+class Articles extends Component
+{   
+    use WithPagination;
+    public function render()
+    {   
+        $articles = Article::where('user_id', auth()->user()->id)->paginate(10);
+            
+        return view('livewire.articles', [
+            'article' => $articles,
+        ]);
+    }
+}
+
+//ejecutamos
+
+php artisan vendor:publish --tag=jetstream-views
+
+//configuramos livewire\articles.blade.php
+
+<div class="p-2 sm:px-20 bg-white border-b border-gray-200">
+    <div class="mt-4 text-2xl">
+        <div>Aritculos</div>
+    </div>
+    <div class="mt-3">
+        <table class="table-auto w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Id</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Descripción</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Precio</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Cantidad</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        Status
+                    </th>
+                    <th class="px-4 py-2">
+                        Acción
+                    </th>
+                </tr>
+            </thead>
+            <body>
+                @foreach ($articles as $article)
+                    <tr>
+                        <td class="rounder border px-4 py-2">{{ $article->id }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->name }}</td>
+                        <td class="rounder border px-4 py-2">{{ number_format($article->price, 2) }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->quantity }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->status ? 'Activo': 'Inactivo'}}</td>
+                        <td class="rounder border px-4 py-2">Editar/Eliminar</td>
+                    </tr>
+                @endforeach
+            </body>
+        </table>
+        <div class="mt-4">
+            {{$articles->links()}}
+        </div>
+    </div>
+</div>
+//configuramos livewire\articles.blade.php agregamos un checkbox
+
+<div class="p-2 sm:px-20 bg-white border-b border-gray-200">
+    <div class="mt-4 text-2xl">
+        <div>Aritculos</div>
+    </div>
+    <div class="mt-3">
+        <div class="flex justify-between">
+            <div>
+
+            </div>
+            <div class="mr-2">
+                <input type="checkbox" class="mr-2 leading-tight" name="" wire:model="active"/>¿Solo Activos?
+            </div>
+        </div>
+        <table class="table-auto w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Id</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Descripción</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Precio</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Cantidad</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        Status
+                    </th>
+                    <th class="px-4 py-2">
+                        Acción
+                    </th>
+                </tr>
+            </thead>
+            <body>
+                @foreach ($articles as $article)
+                    <tr>
+                        <td class="rounder border px-4 py-2">{{ $article->id }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->name }}</td>
+                        <td class="rounder border px-4 py-2">{{ number_format($article->price, 2) }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->quantity }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->status ? 'Activo': 'Inactivo'}}</td>
+                        <td class="rounder border px-4 py-2">Editar/Eliminar</td>
+                    </tr>
+                @endforeach
+            </body>
+        </table>
+        <div class="mt-4">
+            {{$articles->links()}}
+        </div>
+    </div>
+</div>
+
+ //configuramos app\Http\Livewire\Article.php
+ 
+ <?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Article;
+use Livewire\WithPagination;
+
+class Articles extends Component
+{   
+    use WithPagination;
+    public $active;
+    public function render()
+    {   
+        $articles = Article::where('user_id', auth()->user()->id)
+        ->when($this->active, function($query){
+            return $query->where('status', 1);
+        })    
+        ->paginate(10);
+            
+        return view('livewire.articles', [
+            'articles' => $articles,
+        ]);
+    }
+}
+//modificamos app\Models\Article.php
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+
+class Article extends Model
+{
+    use HasFactory;
+    protected $fillable = ['name', 'price', 'quantity', 'status'];
+
+    public function user()
+    {
+	return $this->belongsTo(User::class);
+    }
+    public function scopeActive($query)
+    {
+        return $query->where('status', 1);
+    }
+}
+//Modificamos app\Http\Livewire\Article.php
+
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Article;
+use Livewire\WithPagination;
+
+class Articles extends Component
+{   
+    use WithPagination;
+    public $active;
+    public function render()
+    {   
+        $articles = Article::where('user_id', auth()->user()->id)
+        ->when($this->active, function($query){
+            return $query->active();
+        })    
+        ->paginate(10);
+            
+        return view('livewire.articles', [
+            'articles' => $articles,
+        ]);
+    }
+}
+
+//Seguimos Modificando app\Http\Livewire\Article.php
+
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Article;
+use Livewire\WithPagination;
+
+class Articles extends Component
+{   
+    use WithPagination;
+    public $active;
+    public function render()
+    {   
+        $articles = Article::where('user_id', auth()->user()->id)
+        ->when($this->active, function($query){
+            return $query->active();
+        })    
+        ->paginate(10);
+            
+        return view('livewire.articles', [
+            'articles' => $articles,
+        ]);
+    }
+    public function updatingActive()
+    {
+        $this->resetPage();
+    }
+}
+
+//Seguimos Modificando app\Http\Livewire\Article.php
+
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Article;
+use Livewire\WithPagination;
+
+class Articles extends Component
+{   
+    use WithPagination;
+    public $active;
+    public function render()
+    {   
+        $articles = Article::where('user_id', auth()->user()->id)
+        ->when($this->active, function($query){
+            return $query->active();
+        });  
+        $query = $articles->toSql();
+        $articles = $articles->paginate(10);
+            
+        return view('livewire.articles', [
+            'articles' => $articles,
+            'query' => $query
+        ]);
+    }
+    public function updatingActive()
+    {
+        $this->resetPage();
+    }
+}
+
+//editamos la vista livewire\articles.blade.php
+
+<div class="p-2 sm:px-20 bg-white border-b border-gray-200">
+    <div class="mt-4 text-2xl">
+        Aritculos
+    </div>
+    {{$query}}
+    <div class="mt-3">
+        <div class="flex justify-between">
+            <div>
+                <input wire:model="q" type="search" placeholder="Buscar" class="shadow appearance-none border rounded w-full py-2 px-3// input wire:model.debounce.200ms para modificar el tiempo de busqueda
+                text-gray-700 leading-tight focus:outline-none focus:shadow-outline placeholder-blue-400" name="">
+            </div>
+            <div class="mr-2">
+                <input type="checkbox" class="mr-2 leading-tight" name="" wire:model="active"/>¿Solo Activos?
+            </div>
+        </div>
+        <table class="table-auto w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Id</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Descripción</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Precio</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Cantidad</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        Status
+                    </th>
+                    <th class="px-4 py-2">
+                        Acción
+                    </th>
+                </tr>
+            </thead>
+            <body>
+                @foreach ($articles as $article)
+                    <tr>
+                        <td class="rounder border px-4 py-2">{{ $article->id }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->name }}</td>
+                        <td class="rounder border px-4 py-2">{{ number_format($article->price, 2) }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->quantity }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->status ? 'Activo': 'Inactivo'}}</td>
+                        <td class="rounder border px-4 py-2">Editar/Eliminar</td>
+                    </tr>
+                @endforeach
+            </body>
+        </table>
+        <div class="mt-4">
+            {{$articles->links()}}
+        </div>
+    </div>
+</div>
+
+// configuramos el componente app\Http\Livewire\Article.php
+
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Article;
+use Livewire\WithPagination;
+
+class Articles extends Component
+{   
+    use WithPagination;
+    public $active;
+    public $q;
+    public function render()
+    {   
+        $articles = Article::where('user_id', auth()->user()->id)
+            ->when($this->q, function($query) {
+                return $query->where(function ($query) {
+                    $query->where('name', 'like', '%'.$this->q . '%')
+                        ->orwhere('price', 'like', '%'.$this->q .'%')
+                        ->orwhere('quantity', 'like', '%'.$this->q .'%');
+                });
+            })
+        ->when($this->active, function($query){
+            return $query->active();
+        });  
+        $query = $articles->toSql();
+        $articles = $articles->paginate(10);
+            
+        return view('livewire.articles', [
+            'articles' => $articles,
+            'query' => $query
+        ]);
+    }
+    public function updatingActive()
+    {
+        $this->resetPage();
+    }
+    
+}
+
+//Seguimos Modificando app\Http\Livewire\Article.php agregamos una nueva funcion
+
+public function updatingQ()
+    {
+        $this->resetPage();
+    }
+
+////Seguimos Modificando app\Http\Livewire\Article.php
+
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Article;
+use Livewire\WithPagination;
+
+class Articles extends Component
+{   
+    use WithPagination;
+    public $active;
+    public $q;
+
+    protected $queryString = [
+        'active' => ['except' => false],
+        'q' => ['except' => '']
+
+    ];
+    public function render()
+    {   
+        $articles = Article::where('user_id', auth()->user()->id)
+            ->when($this->q, function($query) {
+                return $query->where(function ($query) {
+                    $query->where('name', 'like', '%'.$this->q . '%')
+                        ->orwhere('price', 'like', '%'.$this->q .'%')
+                        ->orwhere('quantity', 'like', '%'.$this->q .'%');
+                });
+            })
+        ->when($this->active, function($query){
+            return $query->active();
+        });  
+        $query = $articles->toSql();
+        $articles = $articles->paginate(10);
+            
+        return view('livewire.articles', [
+            'articles' => $articles,
+            'query' => $query
+        ]);
+    }
+    public function updatingActive()
+    {
+        $this->resetPage();
+    }
+    public function updatingQ()
+    {
+        $this->resetPage();
+    }
+}
+
+//modificamos la plantilla blade ivewire\articles.blade.php
+
+<div class="p-2 sm:px-20 bg-white border-b border-gray-200">
+    <div class="mt-4 text-2xl">
+        Aritculos
+    </div>
+    {{$query}}
+    <div class="mt-3">
+        <div class="flex justify-between">
+            <div>
+                <input wire:model.debounce.500ms="q" type="search" placeholder="Buscar" class="shadow appearance-none border rounded w-full py-2 px-3
+                text-gray-700 leading-tight focus:outline-none focus:shadow-outline placeholder-blue-400" name="">
+            </div>
+            <div class="mr-2">
+                <input type="checkbox" class="mr-2 leading-tight" name="" wire:model="active"/>¿Solo Activos?
+            </div>
+        </div>
+        <table class="table-auto w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Id</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Descripción</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Precio</div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">Cantidad</div>
+                    </th>
+                    @if(!$active)
+                    <th class="px-4 py-2">
+                        Estado
+                    </th>
+                    @endif
+                    <th class="px-4 py-2">
+                        Acción
+                    </th>
+                </tr>
+            </thead>
+            <body>
+                @foreach ($articles as $article)
+                    <tr>
+                        <td class="rounder border px-4 py-2">{{ $article->id }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->name }}</td>
+                        <td class="rounder border px-4 py-2">{{ number_format($article->price, 2) }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->quantity }}</td>
+                        @if(!$active)             
+                        <td class="rounder border px-4 py-2">{{ $article->status ? 'Activo': 'Inactivo'}}</td>
+                        @endif
+                        <td class="rounder border px-4 py-2">Editar/Eliminar</td>
+                    </tr>
+                @endforeach
+            </body>
+        </table>
+        <div class="mt-4">
+            {{$articles->links()}}
+        </div>
+    </div>
+</div>
+
+//configuramos mostrar registros accendentes y descendentes en app\Http\Livewire\Articles.php
+
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Article;
+use Livewire\WithPagination;
+
+class Articles extends Component
+{   
+    use WithPagination;
+    public $active;
+    public $q;
+    public $sortBy= 'id';
+    public $sortAsc = true;
+
+    protected $queryString = [
+        'active' => ['except' => false],
+        'q' => ['except' => ''],
+        'sortBy' => ['except' => 'id'],
+        'sortAsc' => ['except' => true],
+
+    ];
+    public function render()
+    {   
+        $articles = Article::where('user_id', auth()->user()->id)
+            ->when($this->q, function($query) {
+                return $query->where(function ($query) {
+                    $query->where('name', 'like', '%'.$this->q . '%')
+                        ->orwhere('price', 'like', '%'.$this->q .'%')
+                        ->orwhere('quantity', 'like', '%'.$this->q .'%');
+                });
+            })
+        ->when($this->active, function($query){
+            return $query->active();
+        })
+        ->orderBy($this->sortBy, $this->sortAsc ? 'ASC' : 'DESC');  
+        $query = $articles->toSql();
+        $articles = $articles->paginate(10);
+            
+        return view('livewire.articles', [
+            'articles' => $articles,
+            'query' => $query
+        ]);
+    }
+    public function updatingActive()
+    {
+        $this->resetPage();
+    }
+    public function updatingQ()
+    {
+        $this->resetPage();
+    }
+}
+
+//configuramos la plantilla blade view\livewire\articles.blade.php
+
+<div class="p-2 sm:px-20 bg-white border-b border-gray-200">
+    <div class="mt-4 text-2xl">
+        Articulos
+    </div>
+    {{$query}}
+    <div class="mt-3">
+        <div class="flex justify-between">
+            <div>
+                <input wire:model.debounce.500ms="q" type="search" placeholder="Buscar" class="shadow appearance-none border rounded w-full py-2 px-3
+                text-gray-700 leading-tight focus:outline-none focus:shadow-outline placeholder-blue-400" name="">
+            </div>
+            <div class="mr-2">
+                <input type="checkbox" class="mr-2 leading-tight" name="" wire:model="active"/>¿Solo Activos?
+            </div>
+        </div>
+        <table class="table-auto w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('id')">Id</button>
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('name')">Descripción</button>
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('price')">Precio</button>
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('quantity')">Cantidad</button>
+                        </div>
+                    </th>
+                    @if(!$active)
+                    <th class="px-4 py-2">
+                        Estado
+                    </th>
+                    @endif
+                    <th class="px-4 py-2">
+                        Acción
+                    </th>
+                </tr>
+            </thead>
+            <body>
+                @foreach ($articles as $article)
+                    <tr>
+                        <td class="rounder border px-4 py-2">{{ $article->id }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->name }}</td>
+                        <td class="rounder border px-4 py-2">{{ number_format($article->price, 2) }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->quantity }}</td>
+                        @if(!$active)             
+                        <td class="rounder border px-4 py-2">{{ $article->status ? 'Activo': 'Inactivo'}}</td>
+                        @endif
+                        <td class="rounder border px-4 py-2">Editar/Eliminar</td>
+                    </tr>
+                @endforeach
+            </body>
+        </table>
+        <div class="mt-4">
+            {{$articles->links()}}
+        </div>
+    </div>
+</div>
+//creamos una nueva funcion para asce y desc en el componente app\Http\Livewire\Articles.php 
+
+public function sortBy($field)
+    {
+        if($field == $this->sortBy){
+            $this->sortAsc = !$this->sortAsc;
+        }
+        $this->sortBy = $field;
+    }
+    
+//configuramos el iconos de en la plantilla blade
+
+<div class="p-2 sm:px-20 bg-white border-b border-gray-200">
+    <div class="mt-4 text-2xl">
+        Articulos
+    </div>
+    {{$query}}
+    <div class="mt-3">
+        <div class="flex justify-between">
+            <div>
+                <input wire:model.debounce.500ms="q" type="search" placeholder="Buscar" class="shadow appearance-none border rounded w-full py-2 px-3
+                text-gray-700 leading-tight focus:outline-none focus:shadow-outline placeholder-blue-400" name="">
+            </div>
+            <div class="mr-2">
+                <input type="checkbox" class="mr-2 leading-tight" name="" wire:model="active"/>¿Solo Activos?
+            </div>
+        </div>
+        <table class="table-auto w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('id')">Id</button>
+                            @if( $sortBy == 'id')
+                                @if( !$sortAsc)
+                                <span class="w-4 h-4 ml-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1
+                                        1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                    </svg>
+                                </span>
+                                @endif
+
+                                @if($sortAsc)
+                                <span class="w-4 h-4 ml-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                                      </svg>                                      
+                                </span>
+                                @endif
+                            @endif
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('name')">Descripción</button>
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('price')">Precio</button>
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('quantity')">Cantidad</button>
+                        </div>
+                    </th>
+                    @if(!$active)
+                    <th class="px-4 py-2">
+                        Estado
+                    </th>
+                    @endif
+                    <th class="px-4 py-2">
+                        Acción
+                    </th>
+                </tr>
+            </thead>
+            <body>
+                @foreach ($articles as $article)
+                    <tr>
+                        <td class="rounder border px-4 py-2">{{ $article->id }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->name }}</td>
+                        <td class="rounder border px-4 py-2">{{ number_format($article->price, 2) }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->quantity }}</td>
+                        @if(!$active)             
+                        <td class="rounder border px-4 py-2">{{ $article->status ? 'Activo': 'Inactivo'}}</td>
+                        @endif
+                        <td class="rounder border px-4 py-2">Editar/Eliminar</td>
+                    </tr>
+                @endforeach
+            </body>
+        </table>
+        <div class="mt-4">
+            {{$articles->links()}}
+        </div>
+    </div>
+</div>
+//creamos un componente views\components\sort-icon.blade.php
+cortamos este codigo de articles.blade.php y pegamos en sort-icon.blade.php
+
+@props(['sortBy', 'sortAsc', 'sortField'])
+
+@if( $sortBy == "$sortField")
+     @if( !$sortAsc)
+         <span class="w-4 h-4 ml-2">
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1
+             1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+           </span>
+       @endif
+
+        @if($sortAsc)
+           <span class="w-4 h-4 ml-2">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+               </svg>                                      
+            </span>
+         @endif
+@endif
+
+//modificamos el articles.blade.php
+
+<div class="p-2 sm:px-20 bg-white border-b border-gray-200">
+    <div class="mt-4 text-2xl">
+        Articulos
+    </div>
+    {{$query}}
+    <div class="mt-3">
+        <div class="flex justify-between">
+            <div>
+                <input wire:model.debounce.500ms="q" type="search" placeholder="Buscar" class="shadow appearance-none border rounded w-full py-2 px-3
+                text-gray-700 leading-tight focus:outline-none focus:shadow-outline placeholder-blue-400" name="">
+            </div>
+            <div class="mr-2">
+                <input type="checkbox" class="mr-2 leading-tight" name="" wire:model="active"/>¿Solo Activos?
+            </div>
+        </div>
+        <table class="table-auto w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('id')">Id</button>
+                                <x-sort-icon sortField="id" :sort-by="$sortBy" :sort-asc="$sortAsc" />
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('name')">Descripción</button>
+                            <x-sort-icon sortField="name" :sort-by="$sortBy" :sort-asc="$sortAsc" />
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('price')">Precio</button>
+                            <x-sort-icon sortField="price" :sort-by="$sortBy" :sort-asc="$sortAsc" />
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('quantity')">Cantidad</button>
+                            <x-sort-icon sortField="quantity" :sort-by="$sortBy" :sort-asc="$sortAsc" />
+                        </div>
+                    </th>
+                    @if(!$active)
+                    <th class="px-4 py-2">
+                        Estado
+                    </th>
+                    @endif
+                    <th class="px-4 py-2">
+                        Acción
+                    </th>
+                </tr>
+            </thead>
+            <body>
+                @foreach ($articles as $article)
+                    <tr>
+                        <td class="rounder border px-4 py-2">{{ $article->id }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->name }}</td>
+                        <td class="rounder border px-4 py-2">{{ number_format($article->price, 2) }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->quantity }}</td>
+                        @if(!$active)             
+                        <td class="rounder border px-4 py-2">{{ $article->status ? 'Activo': 'Inactivo'}}</td>
+                        @endif
+                        <td class="rounder border px-4 py-2">Editar/Eliminar</td>
+                    </tr>
+                @endforeach
+            </body>
+        </table>
+        <div class="mt-4">
+            {{$articles->links()}}
+        </div>
+    </div>
+</div>
+
+//creamos boton eliminar 
+
+//modificamos la plantilla articles.blade.php
+
+<td class="rounder border px-4 py-2">
+                            Editar
+                            <x-jet-danger-button wire:click="confirmArticleDeletion ({{$article->id}})" wire:loading.attr="disabled">
+                                {{ __('Eliminar') }}
+                            </x-jet-danger-button>
+                        </td>
+                        
+ //creamos una funcion en el componente Livewire\Articles.php
+ 
+ public function confirmArticleDeletion (Article $article)
+    {
+        $article->delete();
+    }
+ //modificamos la funcion para la ventana de confirmacion
+ 
+ public $confirmingArticleDeletion = false; //variable inicializamos 
+ 
+ public function confirmArticleDeletion ($id)
+    {
+        //$article->delete();
+        $this->confirmingArticleDeletion = $id;
+    }
+ //modificamos la plantilla articles.blade.php
+ 
+ <div class="p-2 sm:px-20 bg-white border-b border-gray-200">
+    <div class="mt-4 text-2xl">
+        Articulos
+    </div>
+    {{$query}}
+    <div class="mt-3">
+        <div class="flex justify-between">
+            <div>
+                <input wire:model.debounce.500ms="q" type="search" placeholder="Buscar" class="shadow appearance-none border rounded w-full py-2 px-3
+                text-gray-700 leading-tight focus:outline-none focus:shadow-outline placeholder-blue-400" name="">
+            </div>
+            <div class="mr-2">
+                <input type="checkbox" class="mr-2 leading-tight" name="" wire:model="active"/>¿Solo Activos?
+            </div>
+        </div>
+        <table class="table-auto w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('id')">Id</button>
+                                <x-sort-icon sortField="id" :sort-by="$sortBy" :sort-asc="$sortAsc" />
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('name')">Descripción</button>
+                            <x-sort-icon sortField="name" :sort-by="$sortBy" :sort-asc="$sortAsc" />
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('price')">Precio</button>
+                            <x-sort-icon sortField="price" :sort-by="$sortBy" :sort-asc="$sortAsc" />
+                        </div>
+                    </th>
+                    <th class="px-4 py-2">
+                        <div class="flex items-center">
+                            <button wire:click="sortBy('quantity')">Cantidad</button>
+                            <x-sort-icon sortField="quantity" :sort-by="$sortBy" :sort-asc="$sortAsc" />
+                        </div>
+                    </th>
+                    @if(!$active)
+                    <th class="px-4 py-2">
+                        Estado
+                    </th>
+                    @endif
+                    <th class="px-4 py-2">
+                        Acción
+                    </th>
+                </tr>
+            </thead>
+            <body>
+                @foreach ($articles as $article)
+                    <tr>
+                        <td class="rounder border px-4 py-2">{{ $article->id }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->name }}</td>
+                        <td class="rounder border px-4 py-2">{{ number_format($article->price, 2) }}</td>
+                        <td class="rounder border px-4 py-2">{{ $article->quantity }}</td>
+                        @if(!$active)             
+                        <td class="rounder border px-4 py-2">{{ $article->status ? 'Activo': 'Inactivo'}}</td>
+                        @endif
+                        <td class="rounder border px-4 py-2">
+                            Editar
+                            <x-jet-danger-button wire:click="confirmArticleDeletion ({{$article->id}})" wire:loading.attr="disabled">
+                                {{ __('Eliminar') }}
+                            </x-jet-danger-button>
+                        </td>
+                    </tr>
+                @endforeach
+            </body>
+        </table>
+        <div class="mt-4">
+            {{$articles->links()}}
+        </div>
+        <x-jet-dialog-modal wire:model="confirmingArticleDeletion">
+            <x-slot name="title">
+                {{ __('Eliminar Articulos') }}
+            </x-slot>
+
+            <x-slot name="content">
+                {{ __('¿Está seguro que desea eliminar el Articulo') }}
+
+            </x-slot>
+
+            <x-slot name="footer">
+                <x-jet-secondary-button wire:click="$toggle('confirmingArticleDeletion', false)" wire:loading.attr="disabled">
+                    {{ __('Cancelar') }}
+                </x-jet-secondary-button>
+
+                <x-jet-danger-button class="ml-3" wire:click="deleteArticle ({{$confirmingArticleDeletion}})" wire:loading.attr="disabled">
+                    {{ __('Eliminar') }}
+                </x-jet-danger-button>
+            </x-slot>
+        </x-jet-dialog-modal>
+    </div>
+</div>
+
+//creamos una funcion en el componente app\Http\Livewire\articles.php
+
+public function deleteArticle (Article $article)
+    {
+        $article->delete();
+        $this->confirmArticleDeletion = false;
+    }
+//creamos el modal boton para crear registro Livewire\Articles.php
+
+//configuramos el componente creamos una nueva funcion
+
+public $confirmingArticleAdd = false;//variable
+
+public function confirmArticleAdd ()
+    {
+        
+        $this->confirmingArticleAdd = true;
+    }
+//modificamos la vista articles.blade.php
+
+ <div class="mt-4 text-2xl flex justify-between shadow-inner">// reemplazarlinea 2
+ <div>Articulos</div> //reemplazar linea 3
+ 
+ <div class="mr-2"> //agregar linea 4
+            <x-jet-button wire:click="confirmArticleAdd">
+                Crear nuevo articulo
+            </x-jet-button>
+        </div>
+//borramos $query del componente
+
+//agregamos clase talwind al boton
+
+<x-jet-button wire:click="confirmArticleAdd" class="bg-blue-500 hover:bg-blue-800">//linea 5
+
+//agregamos un modal del formulario en articles.blade.php en la linea 100
+
+<x-jet-dialog-modal wire:model="confirmingArticleDeletion">
+            <x-slot name="title">
+                {{ __('Eliminar Articulos') }}
+            </x-slot>
+
+            <x-slot name="content">
+                {{ __('¿Está seguro que desea eliminar el Articulo') }}
+
+            </x-slot>
+
+            <x-slot name="footer">
+                <x-jet-secondary-button wire:click="$toggle('confirmingArticleDeletion', false)" wire:loading.attr="disabled">
+                    {{ __('Cancelar') }}
+                </x-jet-secondary-button>
+
+                <x-jet-danger-button class="ml-3" wire:click="deleteArticle ({{$confirmingArticleDeletion}})" wire:loading.attr="disabled">
+                    {{ __('Eliminar') }}
+                </x-jet-danger-button>
+            </x-slot>
+        </x-jet-dialog-modal>
+        
+//agregamos una nueva funcion al componente Liverwire\Articles.php
+

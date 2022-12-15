@@ -1,0 +1,1009 @@
+//crear proyecto lavavel
+composer create-project laravel/laravel:^8.0 example-app
+//configuramos la base de datos
+archivo .env
+//ante de instalar jetstream se borra el archivo composer.lock
+//instalamos jetstream
+composer require laravel/jetstream v2.3.0
+//instalamos livewire
+php artisan jetstream:install livewire // v2.0
+npm install && npm run dev
+php artisan migrate
+
+//quitamos el componente welcome de dasboard.blade.php 
+<div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+                <x-jet-welcome />
+            </div>
+//creamos un componente
+php artisan make:livewire ShowPosts
+//probamos el componente show-posts.blade.php
+<h1>esta es un componente</h1>
+//para probar su funcionamiento del componente lo llamamos en dashboard.blade.php
+<div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @livewire('show-posts')
+        </div>
+//creamos model migration posts 
+ php artisan make:model Post -mf
+ public function up()
+    {
+        Schema::create('posts', function (Blueprint $table) {
+            $table->id();
+
+            $table->string('title');
+            $table->string('content');
+            $table->timestamps();
+        });
+    }
+//configuramos los factories
+public function definition()
+    {
+        return [
+            'title' => $this->faker->sentence(),
+            'content' => $this->faker->text()
+        ];
+    }
+//configuramos el seeder
+
+public function run()
+    {
+         \App\Models\Post::factory(100)->create();
+    }
+// configuramos Models/Post.php
+
+protected $fillable = ['title', 'content'];
+
+php artisan migrate:fresh --seed
+
+//editamos Livewire/ShowPost.php para mostrar datos de la base de datos 
+
+public function render()
+    {
+        $posts = Post::all();
+
+        return view('livewire.show-posts', compact('posts'));
+    }
+//en la vista show-posts.blade.php llamamos la variable $posts
+
+<div>
+    {{$posts}}
+</div>
+//cramos un componente blade en view components/table.blade.php_check_syntax
+<div class="flex flex-col">
+    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                {{$slot}}
+            </div>
+        </div>
+    </div>
+</div>
+
+//editamos el componente show-posts.blade.php agregamos una tabla
+
+<div>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Dashboard') }}
+        </h2>
+    </x-slot>
+    <div class="max-w-7x1 mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!---Table---->
+        <x-table>
+
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            ID
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Title
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Content
+                        </th>
+                        <th scope="col" class="relative px-6 py-3">
+                            <span class="sr-only">Edit</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                @foreach ($posts as $post )
+                    
+                
+                    <tr>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">
+                                {{$post->id}}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">
+                                {{$post->title}}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">
+                                {{$post->content}}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </x-table>
+
+    </div>
+
+</div>
+
+//creamos la propiedad $seach en Livewire/ShowPosts.php_check_syntax
+
+public $search = 'esto se buscara';
+
+//mostramos en la plantilla blade esta propiedad enlazamos
+
+
+<div class="px-6 py-4">
+            <input type="text" wire:model="search">
+        </div>
+
+//una vez funciona seguimos modificando filtrando el buscador
+
+public $search
+
+ublic function render()
+    {  
+        $posts = Post::where('title', 'like', '%'.$this->search.'%')
+                        ->orWhere('content', 'like', '%'.$this->search.'%')->get();
+
+        return view('livewire.show-posts', compact('posts'));
+    }
+ //utilizamos los componentes de jetstream para modificar el input del buscador blade
+
+ php artisan vendor:publish --tag=jetstream-views
+
+ //llamamos al componente input del vendor/components en show-post.blade.php
+
+<!--search-->
+<div class="px-6 py-4">
+                <x-jet-input class="w-full" placeholder="buscar" type="text" wire:model="search" />
+</div>
+//agregamos un @if
+<x-table>
+            <!--search-->
+            <div class="px-6 py-4">
+                <x-jet-input class="w-full" placeholder="buscar" type="text" wire:model="search" />
+            </div>
+            @if ($posts->count())
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                ID
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Title
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Content
+                            </th>
+                            <th scope="col" class="relative px-6 py-3">
+                                <span class="sr-only">Edit</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach ($posts as $post)
+                            <tr>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">
+                                        {{ $post->id }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">
+                                        {{ $post->title }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">
+                                        {{ $post->content }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @else
+            <div class="px-6 py-4">
+                No existe ningun registro que coincida con la busqueda
+            </div>
+            @endif
+        </x-table>
+
+//agregamos propiedades $sort y $direction a ShowPost
+
+public $sort = 'id';
+public $direction = 'desc';
+
+//agregamos otra funtion en el render
+
+public function render()
+    {  
+        $posts = Post::where('title', 'like', '%'.$this->search.'%')
+                        ->orWhere('content', 'like', '%'.$this->search.'%')
+                        ->orderBy($this->sort, $this->direction)
+                        ->get();
+        return view('livewire.show-posts', compact('posts'));
+    }
+//agregamos el metodo order
+
+public function order($sort){
+
+if($this->sort == $sort){
+    
+    if ($this->direction == 'desc') {
+        $this->direction = 'asc';
+    }
+    else{
+        $this->direction = 'desc';
+    }
+}
+else{
+    $this->sort = $sort;
+    $this->direction = 'asc';
+}
+}
+//mostramos en la plantilla y modificamos show-posts
+en el th agregamos la class="cursor-pointer"
+//al th ID class="w-24"
+
+//enlazamos el metodo order con wire:click="order"
+ 
+wire:click="order('id')"
+wire:click="order('title')"
+wire:click="order('content')"
+
+//para agregar icono descargamos la libreria fontawesome-free
+y lo copiamos en public/vendor
+//luego agregamos el link de styles de la libreria en app.blade.php
+//agregamos debajo de Title de la plantilla show-post.blade.php
+
+@if ($sort == 'title')
+
+                                    @if ($direction == 'asc')
+                                        <i class="fas fa-sort-alpha-up-alt float-right mt-1"></i>
+                                    @else
+                                        <i class="fas fa-sort-alpha-down-alt float-right mt-1"></i>
+                                    @endif
+                                @else
+                                    <i class="fas fa-sort float-right mt-1"></i>
+                                @endif
+
+//lo mismo para id y content 
+
+//creamos un componente create-posts
+php artisan make:livewire create-post
+
+//agregamos un boton en create-post.blade.php 
+
+<div>
+    <x-jet-danger-button>
+        Crear Nuevo Post
+    </x-jet-danger-button>
+</div>
+
+//lo llamamos desde show-posts.blade.php despues del input search
+
+@livewire('create-post')
+
+//agregamos en el div de input search la class="flex items-center"
+
+//en el input cambiamos la class="w-full" por class="flex-1 mr-4"
+
+//en el componente create-post.blade.php agregamos un modal de jetstream
+
+<x-jet-dialog-modal wire:model="open">
+        <x-slot name="title">
+        </x-slot>
+        <x-slot name="content">
+        </x-slot>
+        <x-slot name="footer">
+        </x-slot>
+
+    </x-jet-dialog-modal>
+//agramamos la propiedad magica para abrir el modal con el boton 
+
+<x-jet-danger-button wire:click="$set('open', true)">
+        Crear Nuevo Post
+    </x-jet-danger-button>
+
+//en el componente CreatePost.php creamos una propiedad $open
+
+public $open = true;
+
+//agregamos al modal los datos del formulario
+
+//creamos el style form.css para text area en css jalando los estilos del input jetsream
+.form-control{
+    @apply border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm;
+}
+//hacemos el import en app.css
+npm run dev
+
+<div>
+    <x-jet-danger-button wire:click="$set('open', true)">
+        Crear Nuevo Post
+    </x-jet-danger-button>
+
+    <x-jet-dialog-modal wire:model="open">
+        <x-slot name="title">
+            Crear Nuevo Post
+        </x-slot>
+
+        <x-slot name="content">
+            <div class="mb-4">
+                <x-jet-label value="Título del post"/>
+                <x-jet-input wire:model.defer="title" type="text" class="w-full"/>
+            </div>
+
+            <div class="mb-4">
+                <x-jet-label value="Contenido del post"/>
+                <textarea wire:model.defer="content" class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm w-full" rows="6"></textarea>
+            </div>
+        </x-slot>
+        
+        <x-slot name="footer">
+            <x-jet-secondary-button wire:click="$set('open', false)">
+                Cancelar
+            </x-jet-secondary-button>
+
+            <x-jet-danger-button wire:click="save">
+                Guardar
+            </x-jet-danger-button>
+        </x-slot>
+
+    </x-jet-dialog-modal>
+</div>
+
+//en el componente CreatePosts.php creamos la propiedades y metodos save
+
+public $title, $content;
+
+public function save(){
+        Post::create([
+            'title' => $this->title,
+            'content' => $this->content
+        ]);
+    }
+// para renderizar la tabla hay que crear una conexion entra componentes
+//despues de guardar hay que avisarle a show-post que se guardo un registro confirmArticleAdd
+//se agrega
+Post::create([
+            'title' => $this->title,
+            'content' => $this->content
+        ]);
+//aqui el emit
+$this->emit('renderizar');
+//luego se va al Componente ShowPosts.php para llamar al emit renderizar
+creando una propiedad protected
+
+protected $listeners = ['renderizar'=>'render'];
+
+//para resetear los campos y cerrar el modal al guardar 
+
+$this->reset(['open', 'title', 'content']);
+$this->emit('renderizar');
+
+//$open cambiamos a false
+
+//agregamos una alerta al guardar registro 
+//utilizamos sweetalert2
+//creamos un emit alert 
+
+$this->emit('alert');
+
+//copiamos en link de sweetalert2 en app.blade.php 
+
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+//en la parte final de app.blade.php creamos un script 
+
+<script>
+        Livewire.on('alert', function() {
+            Swal.fire(
+                'Good job!',
+                'You clicked the button!',
+                'success'
+            )
+        })
+    </script>
+//para personalizar el mensaje desde el componente CreatePosts
+
+$this->emit('alert', 'El post se creó satisfactoriamente');
+
+//llamamos en el script esta function en app.blade 
+
+<script>
+        Livewire.on('alert', function(message) {
+            Swal.fire(
+                'Good job!',
+                message,
+                'success'
+            )
+        })
+    </script>
+
+// para escuchar solo al componente ShowPost.php cambiamos el emit de CreatePost.php
+ 
+$this->emitTo('show-posts','renderizar');
+
+//agregamos validacion al formulario en el componente CreatePost.php
+
+//agregamos la propiedad protected
+
+protected $rules=[
+        'title' => 'required|max:100',
+        'content'=> 'required|max:100',
+    ];
+    public function save(){
+        $this->validate();//agregamos esto
+        Post::create([
+            'title' => $this->title,
+            'content' => $this->content
+        ]);
+
+// en la plantilla create-posts.blad.,php
+despues del input agregamos el mesange de error
+
+@error('title')
+                    <span>
+                        {{ $message }}
+                    </span>
+                @enderror
+
+                @error('content')
+                    <span>
+                        {{ $message }}
+                    </span>
+                @enderror         
+
+//camiamos el mensaje por un componente de jetstreams
+
+<x-jet-input-error for="title"/>
+
+<x-jet-input-error for="content"/>
+
+//creamoos una funcion para restringir los caracteres al registrar y muestre el mensaje
+
+public function updated($propertyName){
+    $this->validateOnly($propertyName);
+}
+
+//modificamos la plantilla create-post.blade.php
+
+quitamos difer del model.difer
+
+//cambiamos el estado de carga al guardar
+en la planttilla blade en la parte footer agregamos esto 
+
+<x-jet-danger-button wire:click="save" wire:loading.attr="disabled" wire:target="save" class="disabled:opacity-25">
+                Guardar
+            </x-jet-danger-button>
+
+//agregamos un campo a la base de datos 
+para guardar las imagenes del posts 
+
+$table->string('image');
+
+//configuramos el conf/filesystems.php
+'default' => env('FILESYSTEM_DRIVER', 'local'),
+lo cambiamos por:
+'default' => env('FILESYSTEM_DRIVER', 'public'),
+//configuramos el factories
+'image' => $this->faker->imageUrl(1280, 720)
+//configuramos el seeders 
+use Illuminate\Support\Facades\Storage;
+
+Storage::deleteDirectory('public/posts');
+        Storage::makeDirectory('public/posts');
+         \App\Models\Post::factory(100)->create();
+
+//php artisan storage:link
+
+//php artisan migrate:fresh --seed
+
+//en el componente CreatePost.php 
+añadimos:
+use Livewire\WithFileUploads; //para subir imagenes
+
+class CreatePost extends Component
+{ 
+use WithFileUploads
+
+
+public $title, $content, $image;
+
+protected $rules=[
+        'title' => 'required',
+        'content'=> 'required',
+        'image' => 'required|image|max:2048'
+    ];
+
+//en la plantilla create-posts agrgamos el campo para la imagen
+
+<div>
+                <input type="file" wire:model="image">
+                <x-jet-input-error for="image" />
+            </div>
+
+//mostramos la imagen temporal y alerta que esta cargando 
+
+<x-slot name="content">
+ <!--alert-->
+ <div wire:loading wire:target='image'
+                class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800"
+                role="alert">
+                <span class="font-medium">¡Imagen!</span> Espere un momento hasta que la imagen se haya procesado.
+            </div>
+            <!--imagen temporal-->
+            @if ($image)
+                <img class="mb-4" src="{{ $image->temporaryUrl() }}">
+            @endif
+
+//desabilitar el boton guardar mientra carga la imagen
+
+wire:target="save, image"
+
+<x-jet-danger-button wire:click="save" wire:loading.attr="disabled" wire:target="save, image"
+                class="disabled:opacity-25">
+                Guardar
+            </x-jet-danger-button>
+
+//en el componente CreatePost.php agregamos para que guarde la imagen
+
+
+public function save(){
+        $this->validate();
+        $image = $this->image->store('storage/posts', 'public_uploads');
+        Post::create([
+            'title' => $this->title,
+            'content' => $this->content,
+            'image'=> $image
+        ]);
+        $this->reset(['open', 'title', 'content', 'image']);
+
+//en conf/filesystems.php agregamos esto
+
+'public_uploads' => [
+            'driver' => 'local',
+            'root' => public_path(),
+        ],
+
+//en Model/Post.php hay que agregar
+'image' //este es el campo de la base de datos de la imagen
+
+//para resetear el input de la imagen creamos una funcion
+
+identidicador:
+
+public $title, $content, $image, $identificador;
+
+public function mount(){
+        $this->identificador = rand();
+    }
+// en la plantilla en el input de la imagen agregamos un id="" llamando
+al identificador
+
+id="{{ $identificador }}"
+
+//despues de renderizar se resetea llamando a
+
+this->reset(['open', 'title', 'content', 'image']);
+
+        $this->identificador = rand();
+
+//creamos un nuevo componente para editar los registros
+
+php artisan make:livewire EditPost
+
+//cortamos el codigo show-posts.blade.php 
+
+<a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+
+//y lo pegamos en el componente edit-post.blade.php
+//y el la vista show-posts llamamos a ese componente
+@livewire('edit-post', ['post' => $post], key($post->id)) 
+
+//editamos el boton editar en el edit-post.blade 
+<div>
+<a class="font-bold text-white py-2 px-4 rounded cursor-pointer bg-green-600 hover:bg-green-500">
+        <i class="fas fa-edit"></i>
+    </a>
+</div>
+//agregmos las propiedades y la funcion para EditPost.php 
+
+use App\Models\Post;
+
+public $post;
+
+public function mount(Post $post){
+    $this->post = $post;
+}
+
+//agragamos el modal en la plantilla edit-post 
+
+<x-jet-dialog-modal wire:model="open">
+        <x-slot name="title">
+        </x-slot>
+
+        <x-slot name="content">
+        </x-slot>
+
+        <x-slot name="footer">
+        </x-slot>
+
+// en el componente EditPost.php agregamos una propiedad $open
+
+public $open = true;
+
+//en el boton agregamos el metodo magico para abrir el modal 
+wire:click="$set('open', true)"
+
+//eliminanos text-right de show-post del
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+
+//añadimos los campos de tabla modal en edit-post.blade.php
+
+<x-jet-dialog-modal wire:model="open">
+        <x-slot name="title">
+            Editar el post {{ $post->title }}
+        </x-slot>
+
+        <x-slot name="content">
+            <div class="mb-4">
+                <x-jet-label value="Título del Post" />
+                <x-jet-input type="text" class="w-full" />
+            </div>
+            <div class="mb-4">
+                <x-jet-label value="Contenido del post" />
+                <textarea
+                    class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm w-full"
+                    rows="6"></textarea>
+            </div>
+        </x-slot>
+
+        <x-slot name="footer">
+        </x-slot>
+    </x-jet-dialog-modal>
+
+//enlazamos con 
+wire:model="post.title"
+wire:model="post.content"
+
+<x-slot name="content">
+            <div class="mb-4">
+                <x-jet-label value="Título del Post" />
+                <x-jet-input wire:model="post.title" type="text" class="w-full" />
+            </div>
+            <div class="mb-4">
+                <x-jet-label value="Contenido del post" />
+                <textarea wire:model="post.content"
+                    class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm w-full"
+                    rows="6"></textarea>
+            </div>
+        </x-slot>
+
+//en el componente EditPost.php para mostrar el contenido a editar
+se añade la propiedad de validacion
+
+protected $rules=[
+        'post.title' => 'required',
+        'post.content'=> 'required',
+    ];
+
+//añadimos los botones al modal edit-post.blade.php en el slot footer
+
+<x-jet-secondary-button wire:click="$set('open', false)">
+                Cancelar
+            </x-jet-secondary-button>
+
+            <x-jet-danger-button wire:click="save" wire:loading.attr="disabled" wire:target="save"
+                class="disabled:opacity-25">
+                Actualizar
+            </x-jet-danger-button>
+
+//creamos en el componente EditPost la funcion save para actualizar los datos de la base de date_offset_get
+
+public function save(){
+        $this->validate();       
+        $this->post->save();
+        //resetar
+        $this->reset(['open']);
+        //renderizar
+        $this->emitTo('show-posts','renderizar');
+        //emitir alert
+        $this->emit('alert', 'El post se actualizo satisfactoriamente');
+
+    }
+//ahora para actualizar la imagen del post en EditPost.php 
+
+use Livewire\WithFileUploads;
+
+class CreatePost extends Component
+{   
+    //subir imagenes
+    use WithFileUploads;
+
+    public $post, $image, $identificador;
+
+    public function mount(Post $post){
+        $this->post = $post;
+
+        $this->identificador = rand();
+    }
+//en la plantilla edit-post añadimos el campo file en la parte de content
+
+<div>
+                <input type="file" wire:model="image" id="{{ $identificador }}">
+                <x-jet-input-error for="image" />
+            </div>
+//copiamos la alerta de carga de imagen y la imagen temporal
+
+<!--alert-->
+<div wire:loading wire:target='image'
+                class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800"
+                role="alert">
+                <span class="font-medium">¡Imagen!</span> Espere un momento hasta que la imagen se haya procesado.
+            </div>
+            <!--imagen temporal-->
+            @if ($image)
+                <img class="mb-4" src="{{ $image->temporaryUrl() }}">
+            @else
+                <img class="mb-4" src="{{$post->image}}">
+            @endif
+
+//en el componente EditPost agregamos las propiedades para reemplazar la imagen y actualizar
+
+use Illuminate\Support\Facades\Storage;
+
+
+public function save(){
+        $this->validate();
+        
+        if ($this->image) {
+
+            Storage::delete($this->post->image);
+
+            $this->post->image = $this->image->store('storage/posts', 'public_uploads');
+        }
+
+        $this->post->save();
+        //resetar
+        $this->reset(['open', 'image']);
+
+        $this->identificador = rand();
+        //renderizar
+        $this->emitTo('show-posts','renderizar');
+        //emitir alert
+        $this->emit('alert', 'El post se actualizo satisfactoriamente');
+
+    }
+//ahora hacemos que el editar este en el componente showpost
+copiamos el boton editar del componente editpost
+<a wire:click="edit({{$post}})"
+        class="font-bold text-white py-2 px-4 rounded cursor-pointer bg-green-600 hover:bg-green-500">
+       Editar <i class="fas fa-edit"></i>
+    </a>
+//creamos la funcion edit en showpost
+//creamos la propiedad public $post
+
+public function edit(Post $post){
+
+$this->post = $post;
+}
+
+//en la vista show post copiamos en la parte final el modal del componente edtipost con algunos cambios
+
+<x-jet-dialog-modal wire:model="open_edit">
+        <x-slot name="title">
+            Editar el post
+        </x-slot>
+
+        <x-slot name="content">
+
+            <!--alert-->
+            <div wire:loading wire:target='image'
+                class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800"
+                role="alert">
+                <span class="font-medium">¡Imagen!</span> Espere un momento hasta que la imagen se haya procesado.
+            </div>
+            <!--imagen temporal-->
+            @if ($image)
+                <img class="mb-4" src="{{ $image->temporaryUrl() }}">
+            @else
+                <img class="mb-4" src="{{$post->image}}">
+            @endif
+
+            <div class="mb-4">
+                <x-jet-label value="Título del Post" />
+                <x-jet-input wire:model="post.title" type="text" class="w-full" />
+            </div>
+            <div class="mb-4">
+                <x-jet-label value="Contenido del post" />
+                <textarea wire:model="post.content"
+                    class="border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm w-full"
+                    rows="6"></textarea>
+            </div>
+
+            <div>
+                <input type="file" wire:model="image" id="{{ $identificador }}">
+                <x-jet-input-error for="image" />
+            </div>
+
+        </x-slot>
+
+        <x-slot name="footer">
+
+            <x-jet-secondary-button wire:click="$set('open', false)">
+                Cancelar
+            </x-jet-secondary-button>
+
+            <x-jet-danger-button wire:click="save" wire:loading.attr="disabled" wire:target="save"
+                class="disabled:opacity-25">
+                Actualizar
+            </x-jet-danger-button>
+
+        </x-slot>
+    </x-jet-dialog-modal>
+
+    creamos la propiedad $open_edit y $image en showpost
+
+    public $open_edit=false;
+    public $image;
+    public $identificador; 
+
+    //iniciamos la propiedad $identificador
+    public function mount(){
+        $this->identificador = rand();
+    }
+
+//para abrir al dar click en el boton editar se tiene que abrir el modal 
+// colocamos en la funcion edit 
+$this->open_edit = true;
+//en el bucle foreach de $post as post
+lo cambiamos $post as $item
+//en la funcion mount inicializamos $this->post new Post;
+el boton wire:click="update"
+
+//paginamos 
+
+use Livewire\WithPagination;
+->paginate(10);
+
+//en la plantilla
+
+@if ($posts->hasPages())
+            <div class="px-6 py-3">
+                {{$posts->links()}}
+            </div>
+//reseteamos el links de search
+creamos una funcion updatingSearch
+
+public function updatingSearch(){
+        $this->resetPage();
+    }
+//en la plantilla show editamos y agregamos el select
+
+<div class="flex items-center">
+                <span>Mostrar</span>
+                <select
+                    class="mx-2 border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span>entradas</span>
+            </div>
+//en el input seach cambiamos la class="mr-4" por mx-4
+
+// en el componente showpost creamos una propiedad
+
+public $cant = 10;
+
+//se lo pasamos a la funcion render en la parte de
+paginate($this->cant)
+
+//en la plantilla select enlazamos con wire:model="cant"
+
+// para modificar las url de cada accion que se haga agregamos esto 
+
+y creamos una propiedad pretected queryString 
+
+protected $queryString = [
+        'cant' => ['except' => '10'],
+        'sort' => ['except' => 'id'],
+        'search' => ['except' => ''],
+        'direction' => ['except' => 'desc']
+    ];
+//incializamos la propiedad search en cadena vacia
+    public $search = ''; 
+    public $cant = '10';
+
+//aplazar carga de mostrar tabla 
+
+//en el componente showpost
+
+colocamos la propiedad
+public $readyToLoad = false;
+//y en la funcion render
+
+public function render()
+    {  
+        if($this->readyToLoad){
+
+            $posts = Post::where('title', 'like', '%'.$this->search.'%')
+                        ->orWhere('content', 'like', '%'.$this->search.'%')
+                        ->orderBy($this->sort, $this->direction)
+                        ->paginate($this->cant);
+
+        }else{
+            $post =[];
+        }
+
+        return view('livewire.show-posts', compact('posts'));
+    }
+
+    //creamos una funcion loadpost()
+
+    public function loadPosts(){
+        $this->readyLoad = true;
+
+    }
+
+    //en la vista blade show post modificamos 
+    //en el primer div llamamos a la funcion
+    wire:init="loadPosts
+//en la parte de $posts->count() 
+cambiamos a count($posts)
+//tambien movemos el $post->hasPages() abajo donde termina la etiqueta </table>@if ($posts->hasPages())
+</table>                
+<div class="px-6 py-3">
+                    {{ $posts->links() }}
+                </div>
+            @endif
+//este para mostrar el efecto de carga en @else 
+
+@if ($search)
+                    <div class="px-6 py-4">
+                        No existe ningun registro que coincida con la busqueda
+                    </div>
+                @else
+                    <p class="py-20 text-center animate-ping">Cargando...</p>
+                @endif
+
+//creamos en boton para eliminar registro
+
+<a class="font-bold text-white py-2 px-4 ml-2 rounded cursor-pointer bg-red-600 hover:bg-red-500">
+                                        Eliminar <i class="fas fa-trash"></i>
+                                    </a>
+//integramos swetalert2 de confirmacion de eliminar
+//integramos en la vista showpost despues </x-jet-dialog-modal
+@push('js') 
+<script src="sweetalert2.all.min.js"></script>
+@endpush
+//en la vista post agregamos
+
